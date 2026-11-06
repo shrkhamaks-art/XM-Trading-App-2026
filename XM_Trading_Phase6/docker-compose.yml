@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: trading_demo
+      POSTGRES_USER: trading
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trading -d trading_demo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://trading:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/trading_demo
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      OTP_PEPPER: ${OTP_PEPPER:?Set OTP_PEPPER in .env}
+      APP_ENV: ${APP_ENV:-development}
+      OTP_TTL_SECONDS: 300
+      OTP_MAX_ATTEMPTS: 5
+      ACCESS_TOKEN_MINUTES: 10
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  pgdata:

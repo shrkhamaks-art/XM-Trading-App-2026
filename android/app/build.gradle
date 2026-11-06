@@ -1,0 +1,11 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.example.tradingdemo'
+    compileSdk 35
+    buildFeatures { buildConfig true }
+    defaultConfig {
+        def endpoint = (project.findProperty('XM_API_BASE_URL') ?: '').toString()
+        if (endpoint && !endpoint.startsWith('https://')) throw new GradleException('XM_API_BASE_URL must use HTTPS')
+        buildConfigField 'String', 'API_BASE_URL', '"' + endpoint + '"'
+ applicationId 'com.example.tradingdemo'; minSdk 23; targetSdk 35; versionCode 1; versionName '0.9.1' }
+}

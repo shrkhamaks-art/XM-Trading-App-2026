@@ -1,0 +1,56 @@
+name: Android sandbox debug build
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android/**'
+      - '.github/workflows/android-debug.yml'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Compile and package debug APK
+        run: gradle --no-daemon --stacktrace assembleDebug
+      - name: Verify APK exists and inspect metadata
+        run: |
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | head -20
+          sha256sum app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/SHA256SUMS.txt
+      - name: Emulator installation and launch smoke test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          working-directory: android
+          script: |
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb shell am start -n com.example.tradingdemo/.MainActivity
+            sleep 5
+            adb shell pidof com.example.tradingdemo
+            adb logcat -d -t 1500 > app/build/outputs/apk/debug/emulator-logcat.txt
+      - name: Upload build and emulator evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xm-trading-android-evidence
+          path: |
+            android/app/build/outputs/apk/debug/*.txt
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xm-trading-sandbox-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

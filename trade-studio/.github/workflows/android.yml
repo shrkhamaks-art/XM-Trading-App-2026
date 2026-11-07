@@ -1,0 +1,44 @@
+name: Trade Studio Android
+on:
+  workflow_dispatch:
+    inputs:
+      app_url:
+        description: Deployed Trade Studio HTTPS origin
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+          log-accepted-android-sdk-licenses: false
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build and verify APK
+        working-directory: android
+        env:
+          TRADE_STUDIO_URL: ${{ inputs.app_url }}
+        run: |
+          gradle --no-daemon assembleDebug "-PTRADE_STUDIO_URL=$TRADE_STUDIO_URL"
+          apk=app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$apk"
+          sha256sum "$apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trade-studio-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

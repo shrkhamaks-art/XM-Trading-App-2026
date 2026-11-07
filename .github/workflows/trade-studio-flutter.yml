@@ -1,0 +1,79 @@
+name: Trade Studio Flutter builds
+on:
+  push:
+    branches: [fix/android-sdk]
+    paths:
+      - 'trade-studio/mobile/**'
+      - '.github/workflows/trade-studio-flutter.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [android, ios]
+        include:
+          - platform: android
+            runner: ubuntu-latest
+          - platform: ios
+            runner: macos-latest
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        working-directory: trade-studio/mobile
+    env:
+      API_ORIGIN: ${{ vars.TRADE_STUDIO_API_ORIGIN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        if: matrix.platform == 'android'
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        if: matrix.platform == 'android'
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+          log-accepted-android-sdk-licenses: false
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.9'
+          channel: stable
+      - name: Generate Flutter platform files
+        run: |
+          flutter create --platforms="${{ matrix.platform }}" --org studio.trade --project-name trade_studio --no-pub .
+          if [ -f test/widget_test.dart ] && grep -q 'MyApp' test/widget_test.dart; then rm test/widget_test.dart; fi
+          flutter pub get
+      - name: Test
+        run: |
+          flutter analyze
+          flutter test
+      - name: Build and verify Android test artifacts
+        if: matrix.platform == 'android'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('android/app/src/main/AndroidManifest.xml')
+          content = p.read_text()
+          p.write_text(content.replace('    <application', '    <uses-permission android:name="android.permission.INTERNET"/>\n    <application').replace('android:label="trade_studio"', 'android:label="Trade Studio" android:usesCleartextTraffic="false"'))
+          PY
+          flutter build apk --debug --dart-define="TRADE_STUDIO_URL=$API_ORIGIN"
+          flutter build appbundle --debug --dart-define="TRADE_STUDIO_URL=$API_ORIGIN"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify build/app/outputs/flutter-apk/app-debug.apk
+          jarsigner -verify build/app/outputs/bundle/debug/app-debug.aab
+      - uses: actions/upload-artifact@v4
+        if: matrix.platform == 'android'
+        with:
+          name: trade-studio-android-test
+          path: |
+            trade-studio/mobile/build/app/outputs/flutter-apk/app-debug.apk
+            trade-studio/mobile/build/app/outputs/bundle/debug/app-debug.aab
+          if-no-files-found: error
+      - name: Compile iOS without signing
+        if: matrix.platform == 'ios'
+        run: flutter build ios --release --no-codesign --dart-define="TRADE_STUDIO_URL=$API_ORIGIN"

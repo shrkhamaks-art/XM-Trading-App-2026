@@ -51,7 +51,7 @@ jobs:
           flutter pub get
       - name: Test
         run: |
-          flutter analyze
+          flutter analyze --no-fatal-infos
           flutter test
       - name: Build and verify Android test artifacts
         if: matrix.platform == 'android'

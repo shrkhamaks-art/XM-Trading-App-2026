@@ -47,7 +47,7 @@ jobs:
 
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
-        with:ف
+        with:
           gradle-version: '8.9'
 
       - name: Build Debug APK

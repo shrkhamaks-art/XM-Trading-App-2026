@@ -1,10 +1,9 @@
-
-name: Android Sandbox Debug Build
+name: Android Debug APK
 
 on:
+  workflow_dispatch:
   push:
     branches:
-      - main
       - fix/android-sdk
     paths:
       - 'android/**'
@@ -12,7 +11,6 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -21,13 +19,12 @@ jobs:
   build:
     name: Build Android Debug APK
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: android
 
     steps:
-      - name: Checkout repository
+      - name: Checkout source
         uses: actions/checkout@v4
 
       - name: Set up Java 17
@@ -38,12 +35,13 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          accept-android-sdk-licenses: true
-          packages: >-
-            platform-tools
-            platforms;android-35
-            build-tools;35.0.0
+
+      - name: Install Android SDK 35
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          test -f "$ANDROID_HOME/platforms/android-35/android.jar"
+          test -x "$ANDROID_HOME/build-tools/35.0.0/aapt"
 
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
@@ -57,10 +55,10 @@ jobs:
         run: |
           APK="app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | head -20
           sha256sum "$APK"
 
-      - name: Upload Debug APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: xm-trading-sandbox-debug-apk

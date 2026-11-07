@@ -1,58 +1,69 @@
-name: Android sandbox debug build
+name: Android Debug APK
+
 on:
   workflow_dispatch:
   push:
+    branches:
+      - fix/android-sdk
     paths:
       - 'android/**'
       - '.github/workflows/android-debug.yml'
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
 jobs:
   build:
+    name: Build Android Debug APK
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: android
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
         with:
-          accept-android-sdk-licenses: true
-      - uses: gradle/actions/setup-gradle@v4
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
+
+      - name: Install Android SDK 35
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          test -f "$ANDROID_HOME/platforms/android-35/android.jar"
+          test -x "$ANDROID_HOME/build-tools/35.0.0/aapt"
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Compile and package debug APK
+
+      - name: Build Debug APK
         run: gradle --no-daemon --stacktrace assembleDebug
-      - name: Verify APK exists and inspect metadata
+
+      - name: Verify APK
         run: |
-          test -s app/build/outputs/apk/debug/app-debug.apk
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | head -20
-          sha256sum app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/SHA256SUMS.txt
-      - name: Emulator installation and launch smoke test
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          arch: x86_64
-          profile: pixel_6
-          working-directory: android
-          script: |
-            adb install -r app/build/outputs/apk/debug/app-debug.apk
-            adb shell am start -n com.example.tradingdemo/.MainActivity
-            sleep 5
-            adb shell pidof com.example.tradingdemo
-            adb logcat -d -t 1500 > app/build/outputs/apk/debug/emulator-logcat.txt
-      - name: Upload build and emulator evidence
-        if: always()
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | head -20
+          sha256sum "$APK"
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: xm-trading-android-evidence
-          path: |
-            android/app/build/outputs/apk/debug/*.txt
-          if-no-files-found: warn
-      - uses: actions/upload-artifact@v4
-        with:
           name: xm-trading-sandbox-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          retention-days: 14

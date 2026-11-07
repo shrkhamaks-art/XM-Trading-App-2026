@@ -1,0 +1,22 @@
+plugins { id 'com.android.application' version '8.7.3' }
+
+def apiUrl = providers.gradleProperty('TRADE_STUDIO_URL').orElse('').get()
+def uri = new URI(apiUrl)
+if (uri.scheme != 'https' || !uri.host || uri.userInfo || uri.query || uri.fragment ||
+        !(uri.path in ['', '/'])) {
+    throw new GradleException('Provide a deployed HTTPS origin with -PTRADE_STUDIO_URL')
+}
+
+android {
+    namespace 'studio.trade.app'
+    compileSdk 35
+    buildFeatures { buildConfig true }
+    defaultConfig {
+        applicationId 'studio.trade.app'
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName '0.1.0'
+        buildConfigField 'String', 'APP_URL', '"' + uri.toASCIIString() + '"'
+    }
+}

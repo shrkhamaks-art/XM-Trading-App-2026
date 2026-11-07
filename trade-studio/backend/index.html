@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trade Studio</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0e12;--card:#151a20;--line:#303844;--text:#f6f7fa;--muted:#aeb9c7;--red:#e92035;--green:#48e493}
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:radial-gradient(ellipse at top,#25111b,var(--bg) 440px);color:var(--text);font:16px system-ui,sans-serif;min-height:100dvh}main{width:min(100%,470px);margin:auto;padding:26px 20px;min-height:100dvh}.brand{display:flex;align-items:center;gap:9px;direction:ltr;letter-spacing:.08em}.brand strong{font-size:17px}.brand em{font-style:normal;color:#ff6978}.mark{display:grid;place-items:center;background:var(--red);width:32px;height:32px;border-radius:10px;font-size:22px;font-weight:800}.brand button{width:auto;margin:0 0 0 auto;padding:7px 12px;border:1px solid var(--line);background:var(--card);font-size:13px}.hero{margin:26px 0 18px;border:1px solid #492731;border-radius:18px;overflow:hidden;background:repeating-linear-gradient(0deg,transparent 0 27px,#ffffff08 28px 29px),#11151b}.hero svg{width:100%;display:block;height:135px}h1{font-size:26px;margin:14px 0 8px}h2{font-size:19px;margin:12px 0}p{color:var(--muted);line-height:1.55}label{display:block;margin:17px 0 8px}input,button{border-radius:11px;padding:12px;font:inherit}input{width:100%;background:var(--card);color:var(--text);border:1px solid var(--line)}button{width:100%;margin-top:12px;border:0;background:#c91429;color:#fff;font-weight:700;cursor:pointer}button:disabled{opacity:.55;cursor:default}button.secondary{background:var(--card);border:1px solid var(--line)}button:focus-visible,input:focus-visible{outline:2px solid #ff7885;outline-offset:2px}#message,#panelMessage{color:#ffc2c8}#message:empty,#panelMessage:empty{display:none}#code{font-size:25px;letter-spacing:.45em;text-align:center}bdi{overflow-wrap:anywhere}.badge{display:inline-block;margin-top:24px;padding:6px 10px;border-radius:999px;background:#371823;color:#ffb3bd;font-size:13px}.card,.market{margin:9px 0;border:1px solid var(--line);border-radius:14px;background:var(--card);padding:13px}.balance{font-size:30px;font-weight:800;margin:4px 0;color:#fff}.market{display:flex;justify-content:space-between;align-items:center;text-align:start;gap:12px}.market small,.card small{color:var(--muted);display:block;margin-top:3px}.gain{color:var(--green)}.loss{color:#ff7b8c}.value{text-align:end;white-space:nowrap}.actions{display:flex;gap:8px}.actions button{flex:1}.buy{background:#086b43}.chart{display:block;width:100%;background:#10161c;border-radius:10px}nav{position:sticky;bottom:0;display:flex;justify-content:space-around;gap:2px;margin-top:18px;padding:5px 2px;border:1px solid var(--line);border-radius:14px;background:#11161e}nav button{margin:0;background:transparent;padding:5px 2px;font-size:20px;color:var(--muted)}nav button span{display:block;font-size:10px;margin-top:3px}nav button[aria-current=page]{color:#ff7885}
+</style>
+<main>
+<header class="brand"><span class="mark">↗</span><strong>TRADE <em>STUDIO</em></strong><button id="language" type="button" aria-label="Language">EN</button></header>
+<section id="welcome">
+  <div class="hero" aria-hidden="true">
+    <svg viewBox="0 0 320 145"><path d="M0 127L36 115 54 120 82 93 110 101 139 69 167 79 193 45 217 57 248 32 272 39 320 8" fill="none" stroke="#ff3548" stroke-width="3"/><path d="M0 127L36 115 54 120 82 93 110 101 139 69 167 79 193 45 217 57 248 32 272 39 320 8V145H0Z" fill="#e7193029"/></svg>
+  </div>
+</section>
+
+<h1 id="title">تسجيل الدخول</h1>
+<p id="intro">استخدم بريدك لإنشاء حساب أو الدخول إليه برمز تحقق.</p>
+<form id="login">
+<label for="email" id="emailLabel">البريد الإلكتروني</label>
+<input id="email" type="email" autocomplete="email" dir="ltr" maxlength="254" required>
+<div id="verify" hidden>
+<label for="code" id="codeLabel">رمز التحقق</label>
+<input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" dir="ltr" pattern="[0-9]{6}" maxlength="6" disabled>
+</div>
+<button id="submit">إرسال الرمز</button>
+<button id="reset" type="button" class="secondary" hidden>تغيير البريد أو طلب رمز جديد</button>
+</form>
+<section id="account" hidden>
+<p>الحساب <bdi id="address"></bdi></p>
+<button id="logout" class="secondary">تسجيل الخروج</button>
+<button id="logoutAll" class="secondary">تسجيل الخروج من كل الأجهزة</button>
+</section>
+<button id="preview" class="secondary" type="button">معاينة واجهة التداول</button>
+<section id="dashboard" hidden>
+  <div id="previewBadge" class="badge" role="status">معاينة • بيانات تجريبية</div>
+  <div id="panel"></div>
+  <p id="panelMessage" role="status"></p>
+  <nav id="tabs" aria-label="Trade Studio">
+    <button type="button" data-page="home">⌂<span>الرئيسية</span></button>
+    <button type="button" data-page="markets">⌁<span>الأسواق</span></button>
+    <button type="button" data-page="trade">↕<span>التداول</span></button>
+    <button type="button" data-page="accounts">▣<span>الحسابات</span></button>
+    <button type="button" data-page="transactions">≡<span>المعاملات</span></button>
+  </nav>
+  <button id="exitPreview" class="secondary" type="button">العودة إلى الحساب</button>
+</section>
+<p id="message" role="status" aria-live="polite"></p>
+</main>
+<script>
+const get = id => document.getElementById(id);
+const login = get('login'), email = get('email'), code = get('code');
+const submit = get('submit'), reset = get('reset'), message = get('message');
+let sent = false;
+async function request(path, body) {
+  const response = await fetch('/api/' + path, body === undefined ? {} : {
+    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error);
+  return result;
+}
+function showCode(value) {
+  sent = value;
+  get('verify').hidden = reset.hidden = !value;
+  code.disabled = !value;
+  code.required = value;
+  email.readOnly = value;
+  submit.textContent = value ? t('تحقق وسجّل الدخول', 'Verify and sign in') : t('إرسال الرمز', 'Send code');
+  code.value = '';
+}
+function showAccount(address) {
+  get('address').textContent = address || '';
+  get('account').hidden = !address;
+  login.hidden = Boolean(address);
+  get('title').textContent = address ? t('حسابي', 'My account') : t('تسجيل الدخول', 'Sign in');
+  get('intro').hidden = Boolean(address);
+  signedIn = Boolean(address);
+  togglePreview(!get('dashboard').hidden);
+  message.textContent = '';
+}
+login.addEventListener('submit', async event => {
+  event.preventDefault();
+  submit.disabled = reset.disabled = true;
+  message.textContent = '';
+  try {
+    if (sent) showAccount((await request('verify', {email: email.value, code: code.value})).email);
+    else {
+      await request('code', {email: email.value});
+      showCode(true);
+      code.focus();
+      message.textContent = t('أرسلنا الرمز. راجع بريدك.', 'Code sent. Check your email.');
+    }
+  } catch (error) {
+    message.textContent = error.message || 'تعذر الاتصال بالخادم';
+  } finally {
+    submit.disabled = reset.disabled = false;
+  }
+});
+reset.onclick = () => { showCode(false); message.textContent = ''; email.focus(); };
+async function signOut(path) {
+  try { await request(path, {}); showCode(false); showAccount(''); }
+  catch (error) { message.textContent = error.message; }
+}
+get('logout').onclick = () => signOut('logout');
+get('logoutAll').onclick = () => {
+  if (confirm(t('تسجيل الخروج من جميع الأجهزة؟', 'Sign out of all devices?'))) {
+    signOut('logout-all');
+  }
+};
+let liveQuote = null, liveUnavailable = false;
+let lang = 'ar', page = 'home', selected = 0, signedIn = false;
+const t = (ar, en) => lang === 'ar' ? ar : en;
+const markets = [
+  ['XAUUSD', 'الذهب', 'Gold', '2326.90', '+0.87%'],
+  ['EURUSD', 'اليورو / الدولار', 'Euro / US dollar', '1.08542', '+0.21%'],
+  ['GBPUSD', 'الإسترليني / الدولار', 'Pound / US dollar', '1.26910', '+0.34%'],
+  ['USDJPY', 'الدولار / الين', 'US dollar / yen', '148.36', '−0.12%']
+];
+const labels = [
+  ['home','الرئيسية','Home'], ['markets','الأسواق','Markets'], ['trade','التداول','Trade'],
+  ['accounts','الحسابات','Accounts'], ['transactions','المعاملات','Activity']
+];
+function marketRows() {
+  return markets.map(([symbol, ar, en, price, change], i) =>
+    `<button class="market" type="button" data-symbol="${i}"><span><bdi>${symbol}</bdi><small>${t(ar,en)}</small></span><span class="value"><bdi>${price}</bdi><small class="${i === 3 ? 'loss' : 'gain'}"><bdi>${change}</bdi></small></span></button>`).join('');
+}
+function chart() {
+  const levels = [112,103,111,97,100,87,90,75,69,82,58,66,47,51,35,43,31,39,24];
+  const candles = levels.map((level, i) => {
+    const prior = levels[i-1] ?? 118, x = 13 + i*15;
+    const color = level < prior ? '#37d98b' : '#ff5366';
+    return `<path d="M${x} ${Math.min(level,prior)-7}V${Math.max(level,prior)+7}" stroke="${color}"/><rect x="${x-3}" y="${Math.min(level,prior)}" width="6" height="${Math.max(3,Math.abs(level-prior))}" fill="${color}"/>`;
+  }).join('');
+  return `<svg class="chart" viewBox="0 0 300 145" role="img" aria-label="${t('مخطط شموع تجريبي','Sample candlestick chart')}"><path d="M0 28H300M0 56H300M0 84H300M0 112H300M60 0V145M120 0V145M180 0V145M240 0V145" stroke="#27323e"/>${candles}</svg>`;
+}
+function renderPanel() {
+  const label = labels.find(([key]) => key === page);
+  for (const [key, ar, en] of labels) {
+    const tab = get('tabs').querySelector(`[data-page="${key}"]`);
+    tab.querySelector('span').textContent = t(ar,en);
+    if (key === page) tab.setAttribute('aria-current','page');
+    else tab.removeAttribute('aria-current');
+  }
+  let content = `<h2>${t(label[1],label[2])}</h2>`;
+  if (page === 'home') {
+    content += `<div class="card"><small>${t('رصيد تجريبي','Sample balance')}</small><p class="balance"><bdi>$10,000.00</bdi></p>
+      <div class="actions"><button data-action="fund">${t('إيداع','Deposit')}</button><button class="secondary" data-action="fund">${t('سحب','Withdraw')}</button><button class="secondary" data-action="fund">${t('تحويل','Transfer')}</button></div></div>
+      <h2>${t('نظرة على الأسواق','Market overview')}</h2>` + marketRows();
+  } else if (page === 'markets') {
+    content += `<div class="card"><strong>BTC-USD</strong><p id="liveQuote"></p><small id="liveSource"></small></div>` + marketRows();
+  } else if (page === 'trade') {
+    const [symbol, ar, en, price] = markets[selected];
+    content += `<div class="card"><strong><bdi>${symbol}</bdi></strong><small>${t(ar,en)} · <bdi>${price}</bdi></small>
+      <p>${t('مخطط توضيحي','Illustrative chart')}</p>${chart()}
+      <div class="actions"><button class="buy" data-action="order">${t('شراء','Buy')}</button><button data-action="order">${t('بيع','Sell')}</button></div></div>`;
+  } else if (page === 'accounts') {
+    content += `<div class="card"><small>${t('حساب تجريبي','Demo account')}</small><p class="balance"><bdi>$10,000.00</bdi></p></div><div class="card">${t('الحساب الحقيقي بانتظار ربط الوسيط','Live account awaits broker integration')}</div>`;
+  } else {
+    const examples = [[t('إيداع','Deposit'),'+$1,000.00'],[t('سحب','Withdrawal'),'−$500.00'],[t('تحويل','Transfer'),'$250.00']];
+    content += examples.map(([name, amount]) => `<div class="card"><strong>${name}</strong><small>${t('مثال توضيحي','Sample entry')}</small><bdi>${amount}</bdi></div>`).join('');
+  }
+  get('panel').innerHTML = content;
+  if (page === 'markets') {
+    get('liveQuote').textContent = liveQuote ? '$' + liveQuote.price : liveUnavailable
+      ? t('السعر غير متاح', 'Price unavailable') : t('جارٍ جلب السعر…', 'Fetching price…');
+    if (liveQuote) get('liveSource').textContent = liveQuote.provider + ' · ' + liveQuote.time;
+  }
+  get('panelMessage').textContent = '';
+}
+function togglePreview(open) {
+  get('dashboard').hidden = !open;
+  get('welcome').hidden = get('title').hidden = get('preview').hidden = open;
+  get('intro').hidden = open || signedIn;
+  login.hidden = open || signedIn;
+  get('account').hidden = open || !signedIn;
+  if (open) renderPanel();
+}
+get('preview').onclick = () => togglePreview(true);
+get('exitPreview').onclick = () => togglePreview(false);
+get('dashboard').addEventListener('click', event => {
+  const button = event.target.closest('button');
+  if (!button) return;
+  if (button.dataset.page) {
+    page = button.dataset.page;
+    renderPanel();
+    if (page === 'markets') {
+      request('markets/btc-usd').then(quote => { liveQuote = quote; liveUnavailable = false; })
+        .catch(() => { liveQuote = null; liveUnavailable = true; })
+        .finally(() => { if (page === 'markets') renderPanel(); });
+    }
+  }
+  if (button.dataset.symbol !== undefined) { selected = Number(button.dataset.symbol); page = 'trade'; renderPanel(); }
+  if (button.dataset.action) get('panelMessage').textContent = t('هذه معاينة. يلزم ربط الوسيط لتفعيل العملية.', 'Preview only. This action requires broker integration.');
+});
+get('language').onclick = () => {
+  lang = lang === 'ar' ? 'en' : 'ar';
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  const strings = [
+    ['language','EN','عربي'], ['intro','استخدم بريدك لإنشاء حساب أو الدخول إليه برمز تحقق.','Use your email to create an account or sign in with a code.'],
+    ['emailLabel','البريد الإلكتروني','Email'], ['codeLabel','رمز التحقق','Verification code'],
+    ['submit',sent ? 'تحقق وسجّل الدخول' : 'إرسال الرمز',sent ? 'Verify and sign in' : 'Send code'],
+    ['reset','تغيير البريد أو طلب رمز جديد','Change email or request another code'],
+    ['logout','تسجيل الخروج','Sign out'], ['logoutAll','تسجيل الخروج من كل الأجهزة','Sign out of all devices'], ['preview','معاينة واجهة التداول','Preview trading screens'],
+    ['exitPreview','العودة إلى الحساب','Back to account'], ['previewBadge','معاينة • بيانات تجريبية','Preview · Sample data'],
+    ['title',signedIn ? 'حسابي' : 'تسجيل الدخول',signedIn ? 'My account' : 'Sign in']
+  ];
+  for (const [id, ar, en] of strings) get(id).textContent = t(ar,en);
+  renderPanel();
+};
+request('me').then(result => showAccount(result.email)).catch(() => {});
+</script>
+</html>

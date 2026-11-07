@@ -1,0 +1,15 @@
+name: trade_studio
+description: Trade Studio account and market client.
+publish_to: none
+version: 0.2.0+1
+environment:
+  sdk: '>=3.6.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+flutter:
+  uses-material-design: true
